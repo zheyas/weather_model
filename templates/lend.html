@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Прогноз погоды - Оренбург</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 25%, #4a90e2 50%, #74b9ff 75%, #a29bfe 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 20s ease infinite;
+            min-height: 100vh;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            25% { background-position: 100% 0%; }
+            50% { background-position: 100% 100%; }
+            75% { background-position: 0% 100%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .weather-card {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.1));
+            backdrop-filter: blur(20px);
+            border-radius: 25px;
+            padding: 35px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .weather-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .weather-card:hover::before {
+            left: 100%;
+        }
+
+        .weather-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        }
+
+        .current-weather {
+            text-align: center;
+        }
+
+        .weather-icon {
+            font-size: 5rem;
+            margin: 25px 0;
+            animation: floatSun 3s ease-in-out infinite;
+            filter: drop-shadow(0 0 20px rgba(255, 255, 0, 0.3));
+            transition: all 0.3s ease;
+        }
+
+        .weather-icon:hover {
+            transform: scale(1.2) rotate(15deg);
+            filter: drop-shadow(0 0 30px rgba(255, 255, 0, 0.6));
+        }
+
+        @keyframes floatSun {
+            0%, 100% {
+                transform: translateY(0px) rotate(0deg);
+                filter: drop-shadow(0 0 20px rgba(255, 255, 0, 0.3));
+            }
+            50% {
+                transform: translateY(-15px) rotate(5deg);
+                filter: drop-shadow(0 0 25px rgba(255, 255, 0, 0.5));
+            }
+        }
+
+        .temperature {
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .weather-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .detail-item {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
+            backdrop-filter: blur(10px);
+            padding: 18px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .detail-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .detail-item:hover::before {
+            left: 100%;
+        }
+
+        .detail-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .detail-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .calendar-section {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .calendar-nav {
+            background: linear-gradient(145deg, rgba(116, 185, 255, 0.4), rgba(74, 144, 226, 0.3));
+            border: 2px solid rgba(116, 185, 255, 0.5);
+            color: #ffffff;
+            padding: 12px 18px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
+            font-size: 1.2rem;
+            font-weight: bold;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 25px rgba(30, 60, 114, 0.2);
+            position: relative;
+            overflow: hidden;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .calendar-nav::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: radial-gradient(circle, rgba(162, 155, 254, 0.4) 0%, transparent 70%);
+            transition: all 0.4s ease;
+            transform: translate(-50%, -50%);
+        }
+
+        .calendar-nav:hover::before {
+            width: 100px;
+            height: 100px;
+        }
+
+        .calendar-nav:hover {
+            background: linear-gradient(145deg, rgba(162, 155, 254, 0.5), rgba(116, 185, 255, 0.4));
+            transform: translateY(-3px) scale(1.08);
+            box-shadow: 0 15px 35px rgba(30, 60, 114, 0.3);
+            border-color: rgba(162, 155, 254, 0.6);
+        }
+
+        .calendar-nav:active {
+            transform: translateY(-1px) scale(1.05);
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
+            font-size: 0.95rem;
+            font-weight: 500;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .calendar-day::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at center, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .calendar-day:hover::before {
+            opacity: 1;
+        }
+
+        .calendar-day:hover {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.15));
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .calendar-day.selected {
+            background: linear-gradient(145deg, #4CAF50, #45a049);
+            box-shadow: 0 0 25px rgba(76, 175, 80, 0.6), 0 8px 20px rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 255, 255, 0.6);
+            transform: scale(1.1);
+        }
+
+        .calendar-day.selected:hover {
+            transform: translateY(-2px) scale(1.15);
+        }
+
+        .calendar-day.other-month {
+            opacity: 0.3;
+        }
+
+        .forecast-range {
+            margin-top: 20px;
+        }
+
+        .range-label {
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .range-slider {
+            width: 100%;
+            height: 12px;
+            border-radius: 25px;
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.4));
+            outline: none;
+            -webkit-appearance: none;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #4CAF50, #45a049);
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(76, 175, 80, 0.6),
+                        0 4px 15px rgba(0, 0, 0, 0.3),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            border: 3px solid rgba(255, 255, 255, 0.8);
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
+        }
+
+        .range-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 30px rgba(76, 175, 80, 0.8),
+                        0 6px 20px rgba(0, 0, 0, 0.4),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        }
+
+        .range-slider::-webkit-slider-thumb:active {
+            transform: scale(1.1);
+        }
+
+        .range-slider::-moz-range-thumb {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #4CAF50, #45a049);
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(76, 175, 80, 0.6),
+                        0 4px 15px rgba(0, 0, 0, 0.3);
+            border: 3px solid rgba(255, 255, 255, 0.8);
+            transition: all 0.3s ease;
+        }
+
+        .forecast-timeline {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .timeline-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .forecast-table-container {
+            overflow-x: auto;
+            border-radius: 15px;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .forecast-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+
+        .forecast-table th {
+            background: linear-gradient(145deg, rgba(30, 60, 114, 0.8), rgba(42, 82, 152, 0.6));
+            padding: 18px 15px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid rgba(116, 185, 255, 0.4);
+            color: #ffffff;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .forecast-table td {
+            padding: 16px 15px;
+            border-bottom: 1px solid rgba(116, 185, 255, 0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            color: #f8f9fa;
+        }
+
+        .forecast-table tr {
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
+            position: relative;
+        }
+
+        .forecast-table tr::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, rgba(116, 185, 255, 0.1), rgba(162, 155, 254, 0.15), rgba(116, 185, 255, 0.1));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .forecast-table tr:hover::before {
+            opacity: 1;
+        }
+
+        .forecast-table tr:hover {
+            transform: scale(1.01);
+            box-shadow: 0 8px 25px rgba(30, 60, 114, 0.3);
+        }
+
+        .forecast-table tr:hover td {
+            color: #ffffff;
+        }
+
+        .date-cell {
+            font-weight: 600;
+            color: #74b9ff;
+            text-shadow: 0 0 10px rgba(116, 185, 255, 0.5);
+        }
+
+        .temp-cell {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .min-temp {
+            color: #74b9ff;
+            font-weight: 500;
+        }
+
+        .max-temp {
+            color: #fd79a8;
+            font-weight: 600;
+        }
+
+        .feels-like {
+            color: #fdcb6e;
+            font-weight: 500;
+        }
+
+        .precipitation {
+            color: #81ecec;
+            font-weight: 500;
+        }
+
+        .wind-speed {
+            color: #a29bfe;
+            font-weight: 500;
+        }
+
+        .weather-icon-small {
+            font-size: 1.5rem;
+            margin-right: 8px;
+            vertical-align: middle;
+            display: inline-block;
+            animation: weatherPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes weatherPulse {
+            0%, 100% {
+                transform: scale(1) rotate(0deg);
+                filter: drop-shadow(0 0 5px rgba(116, 185, 255, 0.3));
+            }
+            50% {
+                transform: scale(1.1) rotate(2deg);
+                filter: drop-shadow(0 0 10px rgba(116, 185, 255, 0.6));
+            }
+        }
+
+        .weather-icon-small.rain {
+            animation: rainDrop 1.5s ease-in-out infinite;
+        }
+
+        .weather-icon-small.snow {
+            animation: snowFall 3s ease-in-out infinite;
+        }
+
+        .weather-icon-small.sun {
+            animation: sunRotate 4s linear infinite;
+        }
+
+        .weather-icon-small.cloud {
+            animation: cloudFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes rainDrop {
+            0%, 100% {
+                transform: translateY(0px) scale(1);
+                filter: drop-shadow(0 0 5px rgba(129, 236, 236, 0.4));
+            }
+            50% {
+                transform: translateY(-3px) scale(1.05);
+                filter: drop-shadow(0 0 8px rgba(129, 236, 236, 0.7));
+            }
+        }
+
+        @keyframes snowFall {
+            0%, 100% {
+                transform: translateY(0px) rotate(0deg) scale(1);
+                filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.4));
+            }
+            33% {
+                transform: translateY(-2px) rotate(120deg) scale(1.1);
+                filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.6));
+            }
+            66% {
+                transform: translateY(1px) rotate(240deg) scale(0.95);
+                filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.5));
+            }
+        }
+
+        @keyframes sunRotate {
+            0% {
+                transform: rotate(0deg) scale(1);
+                filter: drop-shadow(0 0 8px rgba(253, 203, 110, 0.5));
+            }
+            25% {
+                transform: rotate(90deg) scale(1.05);
+                filter: drop-shadow(0 0 12px rgba(253, 203, 110, 0.7));
+            }
+            50% {
+                transform: rotate(180deg) scale(1);
+                filter: drop-shadow(0 0 8px rgba(253, 203, 110, 0.5));
+            }
+            75% {
+                transform: rotate(270deg) scale(1.05);
+                filter: drop-shadow(0 0 12px rgba(253, 203, 110, 0.7));
+            }
+            100% {
+                transform: rotate(360deg) scale(1);
+                filter: drop-shadow(0 0 8px rgba(253, 203, 110, 0.5));
+            }
+        }
+
+        @keyframes cloudFloat {
+            0%, 100% {
+                transform: translateX(0px) scale(1);
+                filter: drop-shadow(0 0 5px rgba(162, 155, 254, 0.3));
+            }
+            50% {
+                transform: translateX(2px) scale(1.02);
+                filter: drop-shadow(0 0 8px rgba(162, 155, 254, 0.5));
+            }
+        }
+
+        .timeline-days {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .timeline-day {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
+            backdrop-filter: blur(15px);
+            padding: 25px;
+            border-radius: 20px;
+            text-align: center;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
+            border: 2px solid rgba(255, 255, 255, 0.25);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .timeline-day::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .timeline-day:hover::before {
+            opacity: 1;
+        }
+
+        .timeline-day:hover {
+            transform: translateY(-8px) scale(1.03);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .timeline-date {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-bottom: 10px;
+        }
+
+        .timeline-icon {
+            font-size: 2rem;
+            margin: 10px 0;
+            display: inline-block;
+            animation: timelineWeatherFloat 3s ease-in-out infinite;
+            filter: drop-shadow(0 0 10px rgba(116, 185, 255, 0.4));
+        }
+
+        @keyframes timelineWeatherFloat {
+            0%, 100% {
+                transform: translateY(0px) scale(1);
+                filter: drop-shadow(0 0 10px rgba(116, 185, 255, 0.4));
+            }
+            50% {
+                transform: translateY(-5px) scale(1.05);
+                filter: drop-shadow(0 0 15px rgba(116, 185, 255, 0.6));
+            }
+        }
+
+        .timeline-temp {
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+
+        .floating-clouds {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .cloud {
+            position: absolute;
+            color: rgba(255, 255, 255, 0.08);
+            font-size: 3rem;
+            animation: float 25s infinite linear;
+            filter: blur(1px);
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            animation: sparkle 8s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateX(-100px) translateY(0px);
+                opacity: 0;
+            }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% {
+                transform: translateX(calc(100vw + 100px)) translateY(-20px);
+                opacity: 0;
+            }
+        }
+
+        @keyframes sparkle {
+            0%, 100% {
+                opacity: 0;
+                transform: scale(0) rotate(0deg);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1) rotate(180deg);
+            }
+        }
+
+        .cloud:nth-child(1) { top: 15%; animation-delay: 0s; }
+        .cloud:nth-child(2) { top: 35%; animation-delay: -8s; }
+        .cloud:nth-child(3) { top: 65%; animation-delay: -16s; }
+        .cloud:nth-child(4) { top: 80%; animation-delay: -12s; }
+
+        .particle:nth-child(5) { top: 20%; left: 10%; animation-delay: 0s; }
+        .particle:nth-child(6) { top: 40%; left: 30%; animation-delay: -2s; }
+        .particle:nth-child(7) { top: 60%; left: 70%; animation-delay: -4s; }
+        .particle:nth-child(8) { top: 80%; left: 50%; animation-delay: -6s; }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .weather-card {
+                padding: 20px;
+            }
+
+            .temperature {
+                font-size: 2.5rem;
+            }
+
+            .weather-details {
+                grid-template-columns: 1fr;
+            }
+
+            .timeline-days {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+                gap: 15px;
+            }
+
+            .calendar-grid {
+                gap: 3px;
+            }
+
+            .calendar-day {
+                font-size: 0.8rem;
+            }
+
+            .forecast-table {
+                font-size: 0.85rem;
+            }
+
+            .forecast-table th,
+            .forecast-table td {
+                padding: 12px 8px;
+            }
+
+            .forecast-table th {
+                font-size: 0.8rem;
+            }
+
+            .weather-icon-small {
+                font-size: 1.2rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .weather-icon {
+                font-size: 3rem;
+            }
+
+            .temperature {
+                font-size: 2rem;
+            }
+
+            .timeline-days {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-clouds">
+        <div class="cloud">☁️</div>
+        <div class="cloud">☁️</div>
+        <div class="cloud">☁️</div>
+        <div class="cloud">☁️</div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+    <div class="container">
+        <header class="header">
+            <h1>🌤️ Прогноз погоды</h1>
+            <p>Оренбург, Россия</p>
+        </header>
+
+        <div class="main-content">
+            <div class="weather-card current-weather">
+                <h2>Сейчас</h2>
+                <div class="weather-icon" id="currentIcon">☀️</div>
+                <div class="temperature" id="currentTemp">+18°C</div>
+                <p id="currentDescription">Солнечно</p>
+
+                <div class="weather-details">
+                    <div class="detail-item">
+                        <div class="detail-label">Влажность</div>
+                        <div class="detail-value" id="humidity">65%</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Ветер</div>
+                        <div class="detail-value" id="wind">12 км/ч</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Давление</div>
+                        <div class="detail-value" id="pressure">1013 гПа</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Видимость</div>
+                        <div class="detail-value" id="visibility">10 км</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="calendar-section">
+                <div class="calendar-header">
+                    <button class="calendar-nav" onclick="changeMonth(-1)">‹</button>
+                    <h3 id="currentMonth">Декабрь 2024</h3>
+                    <button class="calendar-nav" onclick="changeMonth(1)">›</button>
+                </div>
+
+                <div class="calendar-grid" id="calendarGrid">
+                    <!-- Календарь будет сгенерирован JavaScript -->
+                </div>
+
+                <div class="forecast-range">
+                    <div class="range-label">Дальность прогноза: <span id="rangeValue">7</span> дней</div>
+                    <input type="range" class="range-slider" min="1" max="14" value="7" id="forecastRange" oninput="updateForecastRange(this.value)">
+                </div>
+            </div>
+        </div>
+
+        <div class="forecast-timeline">
+            <div class="timeline-header">
+                <h2>Прогноз на <span id="forecastDays">7</span> дней</h2>
+            </div>
+
+            <div class="forecast-table-container">
+                <table class="forecast-table" id="forecastTable">
+                    <thead>
+                        <tr>
+                            <th>Дата</th>
+                            <th>Прогноз</th>
+                            <th>Минимум</th>
+                            <th>Максимум</th>
+                            <th>По ощущениям</th>
+                            <th>Осадки</th>
+                            <th>Скорость ветра</th>
+                        </tr>
+                    </thead>
+                    <tbody id="forecastTableBody">
+                        <!-- Данные будут сгенерированы JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="timeline-days" id="timelineDays">
+                <!-- Прогноз будет сгенерирован JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentDate = new Date();
+        let selectedDate = new Date();
+        let forecastRange = 7;
+
+        const weatherIcons = ['☀️', '⛅', '☁️', '🌧️', '⛈️', '🌨️'];
+        const weatherDescriptions = ['Солнечно', 'Переменная облачность', 'Облачно', 'Дождь', 'Гроза', 'Снег'];
+
+        function generateCalendar() {
+            const grid = document.getElementById('calendarGrid');
+            const monthYear = document.getElementById('currentMonth');
+
+            const months = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+                          'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+
+            monthYear.textContent = `${months[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+
+            const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+            const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+            const startDate = new Date(firstDay);
+            startDate.setDate(startDate.getDate() - firstDay.getDay());
+
+            grid.innerHTML = '';
+
+            // Заголовки дней недели
+            const dayHeaders = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+            dayHeaders.forEach(day => {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'calendar-day';
+                dayElement.textContent = day;
+                dayElement.style.fontWeight = 'bold';
+                dayElement.style.cursor = 'default';
+                grid.appendChild(dayElement);
+            });
+
+            // Дни месяца
+            for (let i = 0; i < 42; i++) {
+                const date = new Date(startDate);
+                date.setDate(startDate.getDate() + i);
+
+                const dayElement = document.createElement('div');
+                dayElement.className = 'calendar-day';
+                dayElement.textContent = date.getDate();
+
+                if (date.getMonth() !== currentDate.getMonth()) {
+                    dayElement.classList.add('other-month');
+                }
+
+                if (date.toDateString() === selectedDate.toDateString()) {
+                    dayElement.classList.add('selected');
+                }
+
+                dayElement.onclick = () => selectDate(date);
+                grid.appendChild(dayElement);
+            }
+        }
+
+        function changeMonth(direction) {
+            currentDate.setMonth(currentDate.getMonth() + direction);
+            generateCalendar();
+        }
+
+        function selectDate(date) {
+            selectedDate = new Date(date);
+            generateCalendar();
+            updateWeatherData();
+        }
+
+        function updateForecastRange(value) {
+            forecastRange = parseInt(value);
+            document.getElementById('rangeValue').textContent = value;
+            document.getElementById('forecastDays').textContent = value;
+            generateForecast();
+        }
+
+        function updateWeatherData() {
+            // Симуляция данных погоды
+            const temp = Math.floor(Math.random() * 30) - 5;
+            const iconIndex = Math.floor(Math.random() * weatherIcons.length);
+
+            document.getElementById('currentTemp').textContent = `${temp > 0 ? '+' : ''}${temp}°C`;
+            document.getElementById('currentIcon').textContent = weatherIcons[iconIndex];
+            document.getElementById('currentDescription').textContent = weatherDescriptions[iconIndex];
+
+            document.getElementById('humidity').textContent = `${Math.floor(Math.random() * 40) + 40}%`;
+            document.getElementById('wind').textContent = `${Math.floor(Math.random() * 20) + 5} км/ч`;
+            document.getElementById('pressure').textContent = `${Math.floor(Math.random() * 50) + 990} гПа`;
+            document.getElementById('visibility').textContent = `${Math.floor(Math.random() * 15) + 5} км`;
+        }
+
+        function generateForecast() {
+            generateForecastTable();
+            generateTimelineCards();
+        }
+
+        function generateForecastTable() {
+            const tableBody = document.getElementById('forecastTableBody');
+            tableBody.innerHTML = '';
+
+            // Данные прогноза как в примере пользователя
+            const forecastData = [
+                { date: '2025-09-20', avg: 13.0, min: 6.9, max: 19.6, feels: 10.1, precipitation: 0.1, wind: 3.8 },
+                { date: '2025-09-21', avg: 12.7, min: 6.4, max: 20.3, feels: 9.9, precipitation: 0.0, wind: 3.7 },
+                { date: '2025-09-22', avg: 12.3, min: 5.9, max: 19.4, feels: 9.5, precipitation: 0.1, wind: 3.7 },
+                { date: '2025-09-23', avg: 12.1, min: 5.6, max: 18.8, feels: 9.2, precipitation: 0.1, wind: 3.7 },
+                { date: '2025-09-24', avg: 11.9, min: 5.0, max: 18.8, feels: 9.0, precipitation: 0.1, wind: 3.7 },
+                { date: '2025-09-25', avg: 11.6, min: 5.0, max: 18.2, feels: 8.7, precipitation: 0.1, wind: 3.7 },
+                { date: '2025-09-26', avg: 11.3, min: 4.9, max: 18.4, feels: 8.3, precipitation: 0.0, wind: 3.8 }
+            ];
+
+            for (let i = 0; i < forecastRange && i < forecastData.length; i++) {
+                const data = forecastData[i];
+                const date = new Date(selectedDate);
+                date.setDate(selectedDate.getDate() + i);
+
+                // Генерируем иконку погоды на основе температуры и осадков
+                let weatherIcon = '☀️';
+                let iconClass = 'sun';
+                if (data.precipitation > 0) {
+                    if (data.precipitation > 0.5) {
+                        weatherIcon = '🌧️';
+                        iconClass = 'rain';
+                    } else {
+                        weatherIcon = '🌦️';
+                        iconClass = 'rain';
+                    }
+                } else if (data.avg < 10) {
+                    weatherIcon = '❄️';
+                    iconClass = 'snow';
+                } else if (data.avg < 15) {
+                    weatherIcon = '⛅';
+                    iconClass = 'cloud';
+                }
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="date-cell">${date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })}</td>
+                    <td><span class="weather-icon-small ${iconClass}">${weatherIcon}</span>${data.avg.toFixed(1)}°C</td>
+                    <td class="min-temp">${data.min.toFixed(1)}°C</td>
+                    <td class="max-temp">${data.max.toFixed(1)}°C</td>
+                    <td class="feels-like">${data.feels.toFixed(1)}°C</td>
+                    <td class="precipitation">${data.precipitation.toFixed(1)} мм</td>
+                    <td class="wind-speed">${data.wind.toFixed(1)} м/с</td>
+                `;
+
+                tableBody.appendChild(row);
+            }
+        }
+
+        function generateTimelineCards() {
+            const container = document.getElementById('timelineDays');
+            container.innerHTML = '';
+
+            for (let i = 0; i < Math.min(forecastRange, 7); i++) {
+                const date = new Date(selectedDate);
+                date.setDate(selectedDate.getDate() + i);
+
+                const dayElement = document.createElement('div');
+                dayElement.className = 'timeline-day';
+
+                const temp = Math.floor(Math.random() * 25) - 2;
+                const iconIndex = Math.floor(Math.random() * weatherIcons.length);
+
+                dayElement.innerHTML = `
+                    <div class="timeline-date">${date.toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric', month: 'short' })}</div>
+                    <div class="timeline-icon">${weatherIcons[iconIndex]}</div>
+                    <div class="timeline-temp">${temp > 0 ? '+' : ''}${temp}°C</div>
+                `;
+
+                container.appendChild(dayElement);
+            }
+        }
+
+        // Анимация иконки погоды
+        function animateWeatherIcon() {
+            const icon = document.getElementById('currentIcon');
+            const icons = ['☀️', '🌤️', '⛅'];
+            let currentIconIndex = 0;
+
+            setInterval(() => {
+                if (icon.textContent === '☀️') {
+                    currentIconIndex = (currentIconIndex + 1) % icons.length;
+                    icon.textContent = icons[currentIconIndex];
+
+                    setTimeout(() => {
+                        icon.textContent = '☀️';
+                    }, 1000);
+                }
+            }, 5000);
+        }
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            generateCalendar();
+            updateWeatherData();
+            generateForecast();
+            animateWeatherIcon();
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9831b63bb3a9d34a',t:'MTc1ODU0MzE1OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
