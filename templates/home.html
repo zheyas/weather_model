@@ -582,12 +582,29 @@ width:0; height:0;
         document.getElementById('currentIcon').textContent = icon;
     }
 
+    // ОБНОВЛЕННАЯ ФУНКЦИЯ: Более реалистичная классификация осадков
     function getWeatherIconForTemperature(temp, precipitation) {
-        if (precipitation > 0.5) return {icon: '🌧️', class: 'rain'};
-        if (precipitation >= 0.1 and precipitation < 0.49) return {icon: '🌦️', class: 'rain'};
-        if (temp < 0) return {icon: '❄️', class: 'snow'};
-        if (temp < 10) return {icon: '⛅', class: 'cloud'};
-        return {icon: '☀️', class: 'sun'};
+        // Классификация осадков:
+        // < 0.3 мм - незначительные осадки (не показываем как дождь)
+        // 0.3-2.0 мм - слабые осадки
+        // 2.1-10 мм - умеренные осадки
+        // > 10 мм - сильные осадки
+
+        if (precipitation >= 10) return {icon: '⛈️', class: 'heavy-rain', description: 'Сильный дождь'};
+        if (precipitation >= 2.1) return {icon: '🌧️', class: 'rain', description: 'Дождь'};
+        if (precipitation >= 0.3) return {icon: '🌦️', class: 'light-rain', description: 'Небольшой дождь'};
+        if (temp < 0) return {icon: '❄️', class: 'snow', description: 'Снег'};
+        if (temp < 10) return {icon: '⛅', class: 'cloud', description: 'Облачно'};
+        return {icon: '☀️', class: 'sun', description: 'Солнечно'};
+    }
+
+    // НОВАЯ ФУНКЦИЯ: Форматирование текста осадков
+    function formatPrecipitation(precipitation) {
+        if (precipitation >= 10) return `💧 Сильный дождь (${precipitation.toFixed(1)} мм)`;
+        if (precipitation >= 2.1) return `💧 Дождь (${precipitation.toFixed(1)} мм)`;
+        if (precipitation >= 0.3) return `💧 Небольшой дождь (${precipitation.toFixed(1)} мм)`;
+        if (precipitation > 0) return `💧 Следы осадков (${precipitation.toFixed(1)} мм)`;
+        return 'Без осадков';
     }
 
     // Календарные функции
@@ -703,11 +720,11 @@ width:0; height:0;
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td class="date-cell">${formatDate(dayData['Дата'])}</td>
-                <td><span class="weather-icon-small ${weatherInfo.class}">${weatherInfo.icon}</span>${dayData['Прогноз']}</td>
+                <td><span class="weather-icon-small ${weatherInfo.class}">${weatherInfo.icon}</span> ${weatherInfo.description}</td>
                 <td class="min-temp">${dayData['Минимум']}</td>
                 <td class="max-temp">${dayData['Максимум']}</td>
                 <td class="feels-like">${dayData['По ощущениям']}</td>
-                <td class="precipitation">${dayData['Осадки']}</td>
+                <td class="precipitation">${formatPrecipitation(precipitation)}</td>
                 <td class="wind-speed">${dayData['Скорость ветра']}</td>
             `;
 
@@ -759,7 +776,7 @@ width:0; height:0;
         return `${sign}${temp.toFixed(1)}°C`;
     }
 
-    // Функция для отображения реальных данных из API в карточках
+    // ОБНОВЛЕННАЯ ФУНКЦИЯ: Более точное отображение осадков в карточках
     async function generateTimelineCards() {
         const container = document.getElementById('timelineDays');
         container.innerHTML = '<div style="text-align: center; width: 100%;">Загрузка данных...</div>';
@@ -796,7 +813,7 @@ width:0; height:0;
                 <div class="timeline-icon ${weatherInfo.class}">${weatherInfo.icon}</div>
                 <div class="timeline-temp">${formatTemperature(avgTemp)}</div>
                 <div class="timeline-precipitation" style="font-size: 0.8rem; margin-top: 5px; opacity: 0.8;">
-                    ${precipitation > 0 ? '💧 ' + precipitation.toFixed(1) + ' мм' : 'Без осадков'}
+                    ${formatPrecipitation(precipitation)}
                 </div>
             `;
 
