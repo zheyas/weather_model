@@ -51,6 +51,8 @@ build/
 .mypy_cache/
 .dmypy.json
 file.txt
+
 типа_app.py
+
 templates/lend.html
 templates/base.html

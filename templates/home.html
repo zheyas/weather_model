@@ -364,26 +364,177 @@ width:0; height:0;
     let selectedDate = new Date();
     let forecastRange = 7;
 
+    // Кэш данных
+    const cache = {
+        weather: null,
+        forecast: {},
+        lastUpdate: null
+    };
+
     // Функции для работы с API
     async function fetchCurrentWeather() {
         try {
+            // Проверяем кэш (данные не старше 10 минут)
+            if (cache.weather && Date.now() - cache.weather.timestamp < 10 * 60 * 1000) {
+                return cache.weather.data;
+            }
+
             const response = await fetch(`${API_BASE_URL}/api/weather`);
-            if (!response.ok) throw new Error('Ошибка получения данных');
-            return await response.json();
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const data = await response.json();
+
+            // Сохраняем в кэш
+            cache.weather = {
+                data: data,
+                timestamp: Date.now()
+            };
+
+            return data;
         } catch (error) {
-            console.error('Ошибка:', error);
+            console.error('Ошибка получения текущей погоды:', error);
+            showNotification('Ошибка загрузки текущей погоды', 'error');
             return null;
         }
     }
 
     async function fetchWeatherForecast(startDate, days) {
+        const cacheKey = `${startDate}-${days}`;
+
+        // Проверяем кэш (данные не старше 10 минут)
+        if (cache.forecast[cacheKey] && Date.now() - cache.forecast[cacheKey].timestamp < 10 * 60 * 1000) {
+            return cache.forecast[cacheKey].data;
+        }
+
         try {
             const response = await fetch(`${API_BASE_URL}/api/forecast?date=${startDate}&days=${days}`);
-            if (!response.ok) throw new Error('Ошибка получения прогноза');
-            return await response.json();
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const data = await response.json();
+
+            // Сохраняем в кэш
+            cache.forecast[cacheKey] = {
+                data: data,
+                timestamp: Date.now()
+            };
+
+            return data;
         } catch (error) {
-            console.error('Ошибка:', error);
+            console.error('Ошибка получения прогноза:', error);
+            showNotification('Ошибка загрузки данных прогноза', 'error');
             return null;
+        }
+    }
+
+    // Функция показа уведомлений
+    function showNotification(message, type = 'info') {
+        // Создаем элемент уведомления
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.innerHTML = `
+            <span>${message}</span>
+            <button onclick="this.parentElement.remove()">×</button>
+        `;
+
+        // Стили для уведомлений
+        if (!document.querySelector('.notification-style')) {
+            const style = document.createElement('style');
+            style.className = 'notification-style';
+            style.textContent = `
+                .notification {
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    padding: 15px 20px;
+                    border-radius: 5px;
+                    color: white;
+                    z-index: 1000;
+                    max-width: 300px;
+                    animation: slideIn 0.3s ease;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+                .notification.error { background: #ff6b6b; }
+                .notification.info { background: #4ecdc4; }
+                .notification.success { background: #51cf66; }
+                .notification button {
+                    background: none;
+                    border: none;
+                    color: white;
+                    font-size: 18px;
+                    cursor: pointer;
+                    margin-left: 10px;
+                    padding: 0;
+                    width: 20px;
+                    height: 20px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                @keyframes slideIn {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        document.body.appendChild(notification);
+
+        // Автоматическое удаление через 5 секунд
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+            }
+        }, 5000);
+    }
+
+    // Функция показа индикатора загрузки
+    function showLoading(show = true) {
+        let loader = document.getElementById('loadingIndicator');
+
+        if (show && !loader) {
+            loader = document.createElement('div');
+            loader.id = 'loadingIndicator';
+            loader.innerHTML = `
+                <div class="loading-spinner"></div>
+                <div>Загрузка данных...</div>
+            `;
+
+            const style = document.createElement('style');
+            style.textContent = `
+                #loadingIndicator {
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: rgba(255,255,255,0.95);
+                    padding: 30px;
+                    border-radius: 15px;
+                    z-index: 9999;
+                    text-align: center;
+                    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+                    border: 1px solid #e0e0e0;
+                    font-family: inherit;
+                    min-width: 150px;
+                }
+                .loading-spinner {
+                    border: 4px solid #f3f3f3;
+                    border-top: 4px solid #4ecdc4;
+                    border-radius: 50%;
+                    width: 40px;
+                    height: 40px;
+                    animation: spin 1s linear infinite;
+                    margin: 0 auto 15px;
+                }
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            `;
+            document.head.appendChild(style);
+            document.body.appendChild(loader);
+        } else if (!show && loader) {
+            loader.remove();
         }
     }
 
@@ -404,6 +555,7 @@ width:0; height:0;
             // Fallback данные при ошибке
             document.getElementById('currentTemp').textContent = '+18°C';
             document.getElementById('currentDescription').textContent = 'Солнечно';
+            setWeatherIcon('ясно');
         }
     }
 
@@ -420,7 +572,10 @@ width:0; height:0;
             'небольшой дождь': '🌦️',
             'умеренный дождь': '🌧️',
             'сильный дождь': '⛈️',
-            'ливень': '⛈️'
+            'ливень': '⛈️',
+            'снег': '❄️',
+            'небольшой снег': '🌨️',
+            'метель': '❄️🌪️'
         };
 
         const icon = iconMap[weatherDescription.toLowerCase()] || '☀️';
@@ -429,7 +584,7 @@ width:0; height:0;
 
     function getWeatherIconForTemperature(temp, precipitation) {
         if (precipitation > 0.5) return {icon: '🌧️', class: 'rain'};
-        if (precipitation > 0) return {icon: '🌦️', class: 'rain'};
+        if (precipitation >= 0.1 and precipitation < 0.49) return {icon: '🌦️', class: 'rain'};
         if (temp < 0) return {icon: '❄️', class: 'snow'};
         if (temp < 10) return {icon: '⛅', class: 'cloud'};
         return {icon: '☀️', class: 'sun'};
@@ -480,6 +635,12 @@ width:0; height:0;
                 dayElement.classList.add('selected');
             }
 
+            // Подсветка сегодняшней даты
+            const today = new Date();
+            if (date.toDateString() === today.toDateString()) {
+                dayElement.classList.add('today');
+            }
+
             dayElement.onclick = () => selectDate(date);
             grid.appendChild(dayElement);
         }
@@ -505,8 +666,16 @@ width:0; height:0;
 
     // Основные функции генерации прогноза
     async function generateForecast() {
-        await generateForecastTable();
-        await generateTimelineCards();
+        showLoading(true);
+        try {
+            await generateForecastTable();
+            await generateTimelineCards();
+        } catch (error) {
+            console.error('Ошибка генерации прогноза:', error);
+            showNotification('Ошибка отображения прогноза', 'error');
+        } finally {
+            showLoading(false);
+        }
     }
 
     async function generateForecastTable() {
@@ -516,7 +685,7 @@ width:0; height:0;
         const startDateStr = selectedDate.toISOString().split('T')[0];
         const forecastData = await fetchWeatherForecast(startDateStr, forecastRange);
 
-        if (!forecastData) {
+        if (!forecastData || forecastData.length === 0) {
             tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #ff6b6b;">Ошибка загрузки данных</td></tr>';
             return;
         }
@@ -548,20 +717,41 @@ width:0; height:0;
 
     function formatDate(dateString) {
         const date = new Date(dateString);
-        return date.toLocaleDateString('ru-RU', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-        });
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        if (date.toDateString() === today.toDateString()) {
+            return 'Сегодня';
+        } else if (date.toDateString() === tomorrow.toDateString()) {
+            return 'Завтра';
+        } else {
+            return date.toLocaleDateString('ru-RU', {
+                weekday: 'short',
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+        }
     }
 
     function formatTimelineDate(date) {
-        const options = {
-            weekday: 'short',
-            day: 'numeric',
-            month: 'short'
-        };
-        return date.toLocaleDateString('ru-RU', options);
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        if (date.toDateString() === today.toDateString()) {
+            return 'Сегодня';
+        } else if (date.toDateString() === tomorrow.toDateString()) {
+            return 'Завтра';
+        } else {
+            const options = {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short'
+            };
+            return date.toLocaleDateString('ru-RU', options);
+        }
     }
 
     function formatTemperature(temp) {
@@ -569,7 +759,7 @@ width:0; height:0;
         return `${sign}${temp.toFixed(1)}°C`;
     }
 
-    // ОБНОВЛЕННАЯ ФУНКЦИЯ - отображаем реальные данные из API в карточках
+    // Функция для отображения реальных данных из API в карточках
     async function generateTimelineCards() {
         const container = document.getElementById('timelineDays');
         container.innerHTML = '<div style="text-align: center; width: 100%;">Загрузка данных...</div>';
@@ -591,7 +781,7 @@ width:0; height:0;
             const dayData = forecastData[i];
             const date = new Date(dayData['Дата']);
 
-            // Извлекаем среднюю температуру из данных API (убираем '°C' и преобразуем в число)
+            // Извлекаем среднюю температуру из данных API
             const avgTemp = parseFloat(dayData['Прогноз'].replace('°C', ''));
             const precipitation = parseFloat(dayData['Осадки'].replace(' мм', ''));
 
@@ -632,19 +822,102 @@ width:0; height:0;
         }, 5000);
     }
 
+    // Обработчик изменения размера окна для адаптивности
+    function handleResize() {
+        const container = document.getElementById('timelineDays');
+        const isMobile = window.innerWidth < 768;
+
+        if (container) {
+            if (isMobile) {
+                container.style.overflowX = 'auto';
+                container.style.flexWrap = 'nowrap';
+                container.style.paddingBottom = '10px';
+            } else {
+                container.style.overflowX = 'visible';
+                container.style.flexWrap = 'wrap';
+                container.style.paddingBottom = '0';
+            }
+        }
+    }
+
+    // Функция для обновления времени последнего обновления
+    function updateLastRefreshTime() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('ru-RU', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        const dateString = now.toLocaleDateString('ru-RU', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
+
+        const element = document.getElementById('lastUpdateTime');
+        if (element) {
+            element.textContent = `Обновлено: ${dateString} в ${timeString}`;
+        }
+    }
+
     // Инициализация при загрузке страницы
     document.addEventListener('DOMContentLoaded', async function() {
-        generateCalendar();
-        await updateCurrentWeather();
-        await generateForecast();
-        animateWeatherIcon();
+        showLoading(true);
+        try {
+            generateCalendar();
+            await updateCurrentWeather();
+            await generateForecast();
+            animateWeatherIcon();
+            handleResize();
+            updateLastRefreshTime();
+
+            showNotification('Приложение успешно загружено', 'success');
+        } catch (error) {
+            console.error('Ошибка инициализации:', error);
+            showNotification('Ошибка загрузки приложения', 'error');
+        } finally {
+            showLoading(false);
+        }
+
+        // Обработчик изменения размера окна
+        window.addEventListener('resize', handleResize);
 
         // Обновляем данные каждые 10 минут
         setInterval(async () => {
             await updateCurrentWeather();
             await generateForecast();
+            updateLastRefreshTime();
+            showNotification('Данные обновлены', 'info');
         }, 600000);
+
+        // Добавляем кнопку принудительного обновления
+        const refreshBtn = document.getElementById('refreshBtn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', async () => {
+                showLoading(true);
+                try {
+                    // Очищаем кэш для принудительного обновления
+                    cache.weather = null;
+                    cache.forecast = {};
+
+                    await updateCurrentWeather();
+                    await generateForecast();
+                    updateLastRefreshTime();
+                    showNotification('Данные обновлены вручную', 'success');
+                } catch (error) {
+                    console.error('Ошибка обновления:', error);
+                    showNotification('Ошибка обновления данных', 'error');
+                } finally {
+                    showLoading(false);
+                }
+            });
+        }
     });
+
+    // Глобальные функции для использования в HTML
+    window.changeMonth = changeMonth;
+    window.updateForecastRange = updateForecastRange;
+    window.selectDate = selectDate;
 </script>
+
 </body>
 </html>
